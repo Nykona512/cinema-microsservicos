@@ -1,0 +1,43 @@
+# Requisições REST Client — Sistema de Ingressos de Cinema
+# Extensão do VS Code: REST Client (Huachao Mao / humao.rest-client)
+# Inicie os quatro serviços Flask antes de clicar em Send Request.
+# Se os bancos não estiverem vazios, substitua os IDs 1 nos exemplos.
+# As configurações abaixo podem ser trocadas pelas URLs públicas do Render.
+
+@filmesUrl = http://127.0.0.1:5001
+@salasUrl = http://127.0.0.1:5002
+@sessoesUrl = http://127.0.0.1:5003
+@vendasUrl = http://127.0.0.1:5004
+
+
+# ARQUIVO: Vendas
+
+# A compra aciona reserva de vagas no serviço Sessões via POST.
+
+
+
+### 4 Fazer compra (POST altera sessão)
+POST {{vendasUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "sessaoId": 1,
+  "ingressos": [
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "MEIA"
+    }
+  ]
+}
+
+### Listar pedidos
+GET {{vendasUrl}}/pedidos
+
+### Consultar pedido 1
+GET {{vendasUrl}}/pedidos/1
+
+### Listar ingressos
+GET {{vendasUrl}}/ingressos
+

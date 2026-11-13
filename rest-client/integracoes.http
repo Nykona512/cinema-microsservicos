@@ -1,0 +1,97 @@
+# Requisições REST Client — Sistema de Ingressos de Cinema
+# Extensão do VS Code: REST Client (Huachao Mao / humao.rest-client)
+# Inicie os quatro serviços Flask antes de clicar em Send Request.
+# Se os bancos não estiverem vazios, substitua os IDs 1 nos exemplos.
+# As configurações abaixo podem ser trocadas pelas URLs públicas do Render.
+
+@filmesUrl = http://127.0.0.1:5001
+@salasUrl = http://127.0.0.1:5002
+@sessoesUrl = http://127.0.0.1:5003
+@vendasUrl = http://127.0.0.1:5004
+
+
+# ARQUIVO: Integrações
+
+# INTEGRAÇÕES: execute na ordem, após cadastrar o filme, a sala e a sessão.
+
+# GET 1: Sessões chama Filmes para validar a duração do filme.
+
+# GET 2: Sessões chama Salas para validar a capacidade da sala.
+
+# ALTERAÇÃO: Vendas chama Sessões por POST ao registrar o pedido.
+
+# Para comprovar chamadas entre serviços, acompanhe os logs dos quatro terminais.
+
+# Verifique vagas antes e depois da compra. Repetir a compra consome mais vagas.
+
+
+
+### GET 1 Filme visto de Sessões
+GET {{filmesUrl}}/filmes/1
+
+### GET 2 Sala vista de Sessões
+GET {{salasUrl}}/salas/1
+
+### GET vagas antes/depois venda
+GET {{sessoesUrl}}/sessoes/1
+
+### ALTERAÇÃO: comprar ingressos em Vendas (Vendas -> Sessões por POST)
+POST {{vendasUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "sessaoId": 1,
+  "ingressos": [
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "MEIA"
+    }
+  ]
+}
+
+### Conferir vagas DEPOIS da compra (GET)
+GET {{sessoesUrl}}/sessoes/1
+
+### Erro R2 sessão conflitante
+POST {{sessoesUrl}}/sessoes
+Content-Type: application/json
+
+{
+  "filmeId": 1,
+  "salaId": 1,
+  "inicio": "2026-12-10T15:00:00",
+  "precoInteira": 30
+}
+
+### Erro R3 mais de 6 ingressos
+POST {{vendasUrl}}/pedidos
+Content-Type: application/json
+
+{
+  "sessaoId": 1,
+  "ingressos": [
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    },
+    {
+      "tipo": "INTEIRA"
+    }
+  ]
+}
