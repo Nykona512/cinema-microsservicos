@@ -4,10 +4,11 @@
 # Se os bancos não estiverem vazios, substitua os IDs 1 nos exemplos.
 # As configurações abaixo podem ser trocadas pelas URLs públicas do Render.
 
-@filmesUrl = http://127.0.0.1:5001
-@salasUrl = http://127.0.0.1:5002
-@sessoesUrl = http://127.0.0.1:5003
-@vendasUrl = http://127.0.0.1:5004
+
+@filmesUrl = https://cinema-filmes.onrender.com
+@salasUrl = https://cinema-salas.onrender.com
+@sessoesUrl = https://cinema-sessoes.onrender.com
+@vendasUrl = https://cinema-vendas.onrender.com
 
 
 # ARQUIVO: Vendas
