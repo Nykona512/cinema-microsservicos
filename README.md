@@ -1,6 +1,19 @@
 # Sistema de Ingressos de Cinema — Python e microsserviços
 
-Adaptação do projeto Java/Spring Boot `projeto-entretenimento-cultura` para a avaliação de **Sistemas Distribuídos (SATC)**. O projeto utiliza **Python, Flask, Flask-SQLAlchemy, SQLite, JSON e requests**, com quatro APIs e bancos separados.
+Adaptação do projeto Java/Spring Boot `projeto-entretenimento-cultura` para a avaliação de **Sistemas Distribuídos (SATC)**. A API utiliza **Python, Flask, Flask-SQLAlchemy, SQLite, JSON e requests**, com quatro microsserviços REST independentes. Foi preparada para execução local, testes automatizados e implantação no Render.
+
+## Aplicação publicada (Render)
+
+| Microsserviço | URL pública | Verificar disponibilidade |
+|---|---|---|
+| **Filmes** | https://cinema-filmes.onrender.com | [GET /health](https://cinema-filmes.onrender.com/health) |
+| **Salas** | https://cinema-salas.onrender.com | [GET /health](https://cinema-salas.onrender.com/health) |
+| **Sessões** | https://cinema-sessoes.onrender.com | [GET /health](https://cinema-sessoes.onrender.com/health) |
+| **Vendas** | https://cinema-vendas.onrender.com | [GET /health](https://cinema-vendas.onrender.com/health) |
+
+As URLs acima são as informadas pela equipe após os quatro deploys. A execução de `/health` verifica a disponibilidade de cada API; a validação completa também requer testar as integrações com cadastros e compras (seção 7).
+
+> **Observação:** acessar a raiz `/` pode retornar `404 Not Found`, pois a API expõe rotas específicas como `/health`, `/filmes`, `/salas`, `/sessoes` e `/pedidos`.
 
 ## 1. Documento de requisitos
 
@@ -39,7 +52,16 @@ Permitir que um cinema cadastre filmes, salas e sessões e registre compras de i
 | Sessões | `servico_sessoes/` | 5003 | `servico_sessoes/dados/sessoes.db` | Programação, regra de horários, disponibilidade, reservas e cancelamento compensatório. |
 | Vendas | `servico_vendas/` | 5004 | `servico_vendas/dados/vendas.db` | Pedidos, ingressos, preços e coordenação da compra. |
 
-> **Atribuição:** a equipe deve preencher com os quatro responsáveis antes da entrega. Sugestão: um integrante por serviço.
+### Equipe e responsabilidades
+
+| Integrante | Responsabilidade principal |
+|---|---|
+| **[Nome 1]** | Microsserviço Filmes |
+| **[Nome 2]** | Microsserviço Salas |
+| **[Nome 3]** | Microsserviço Sessões |
+| **[Nome 4]** | Microsserviço Vendas |
+
+*Substituir os nomes entre colchetes antes de entregar. Os testes, a documentação e a integração entre serviços são responsabilidades compartilhadas.*
 
 Cada serviço tem `app.py` (inicialização), `models.py` (tabelas), `regras.py` (negócio), `rotas.py` (API) e, quando necessário, `<outro_servico>_helper.py` (requisições HTTP com timeout). A pasta `comum/` contém apenas validação e tratamento HTTP reutilizáveis; ela **não** faz acesso a banco compartilhado.
 
@@ -75,46 +97,52 @@ As datas são horários locais do cinema; o padrão é `America/Sao_Paulo` (conf
 
 Sessões registra um **UUID cancelado** mesmo quando a reserva ainda não existe (tombstone), bloqueando uma reserva tardia com o mesmo UUID após um timeout. Essa abordagem melhora a recuperação de falhas, mas **não é uma transação distribuída totalmente atômica**; para produção recomenda-se autenticação, outbox/eventos, reconciliação periódica e banco persistente.
 
-## 3. Como executar no VS Code
+## 3. Como executar no VS Code (Windows / CMD)
 
-**Pré-requisitos:** Python 3.10+ (recomendado 3.12), VS Code e acesso à internet para instalar pacotes uma vez.
+**Pré-requisitos:** Python 3.10+ (recomendado 3.12), VS Code, extensão REST Client e internet apenas para instalar os pacotes. Os comandos a seguir usam o **Prompt de Comando (CMD)**, sem depender do PowerShell.
 
-Abra a pasta do projeto no VS Code. No PowerShell:
+Na **raiz do projeto**, crie e ative o ambiente virtual e instale as dependências:
 
-```powershell
+```bat
 py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\activate.bat
 python -m pip install -r requirements.txt
 ```
 
-Se a ativação pelo PowerShell for bloqueada, rode `\.venv\Scripts\python.exe -m pip install -r requirements.txt` e use esse executável nos comandos abaixo.
+Se a política do computador impedir a ativação de scripts, **não é necessário ativar o ambiente**. Instale os pacotes diretamente pelo executável do ambiente virtual:
 
-**Abra quatro terminais, todos na raiz do repositório**, e execute:
+```bat
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-```powershell
-# Terminal 1
+Abra **quatro terminais CMD** no VS Code, todos na raiz do projeto. Execute **um comando em cada terminal**:
+
+```bat
 python -m servico_filmes.app
+```
 
-# Terminal 2
+```bat
 python -m servico_salas.app
+```
 
-# Terminal 3
+```bat
 python -m servico_sessoes.app
+```
 
-# Terminal 4
+```bat
 python -m servico_vendas.app
 ```
 
-No Linux/macOS, ative o ambiente com `source .venv/bin/activate`. Não rode `python app.py` dentro da pasta do serviço: a execução correta é `python -m servico_*.app` **na raiz**, para resolver as importações.
+Se não ativou o ambiente, substitua `python` por `.venv\Scripts\python.exe` nesses quatro comandos. O serviço deve ser iniciado **da raiz do repositório** para que as importações funcionem.
 
-Verifique no navegador:
+**Endpoints locais de saúde:**
 
-- http://127.0.0.1:5001/health
-- http://127.0.0.1:5002/health
-- http://127.0.0.1:5003/health
-- http://127.0.0.1:5004/health
+- http://127.0.0.1:5001/health (Filmes)
+- http://127.0.0.1:5002/health (Salas)
+- http://127.0.0.1:5003/health (Sessões)
+- http://127.0.0.1:5004/health (Vendas)
 
-Os arquivos SQLite são criados automaticamente na primeira execução. Para apagar dados de testes, encerre os servidores e remova os quatro arquivos `.db` (cuidado: você perderá os cadastros).
+Cada microsserviço cria automaticamente seu próprio arquivo `.db` na primeira execução. Se for necessário limpar dados locais, encerre os servidores antes de excluir esses arquivos. **Não envie `.venv/` nem arquivos `.db` ao GitHub**; ambos estão incluídos no `.gitignore`.
 
 ## 4. Demonstração completa no REST Client (VS Code)
 
@@ -126,7 +154,7 @@ Instale a extensão **REST Client** (autor: Huachao Mao, ID `humao.rest-client`)
 - `rest-client/vendas.http`: compras, pedidos e ingressos.
 - `rest-client/integracoes.http`: consultas GET entre serviços, compra que dispara POST e testes de falha.
 
-**Ordem sugerida:** cadastrar filme → cadastrar sala → criar sessão → consultar vagas → fazer compra → consultar vagas novamente. Os IDs `1` nos arquivos partem de bancos vazios. Se necessário, altere os IDs. Para testar em URLs públicas no Render, modifique as variáveis no começo de cada arquivo `.http`.
+**Ordem sugerida:** cadastrar filme → cadastrar sala → criar sessão → consultar vagas → fazer compra → consultar vagas novamente. Os IDs `1` nos arquivos partem de bancos vazios; caso necessário, substitua-os pelos valores retornados nos cadastros. Para executar contra o Render, altere as variáveis `@...Url` no início **de cada arquivo `.http` utilizado**, conforme o exemplo da seção 7.
 
 Abaixo estão os mesmos exemplos com os dados de demonstração.
 
@@ -197,26 +225,73 @@ A estrutura JSON mantém as chaves do projeto Java: `status`, `erro`, `mensagem`
 
 Com as dependências instaladas, execute na **raiz**:
 
-```powershell
+```bat
 python -m pytest -v tests/
 ```
 
 Os testes iniciam instâncias isoladas dos quatro serviços em portas livres e com quatro bancos SQLite temporários. Verificam compra normal, cota de meia-entrada, limite R3, conflito R2, integridade entre serviços e idempotência da reserva.
 
-## 7. Publicação no Render
+## 7. Publicação e demonstração no Render
 
-Crie **quatro Web Services** apontando para o mesmo repositório GitHub, com o diretório raiz do repo e o comando de build `pip install -r requirements.txt`.
+Os **quatro Web Services** utilizam o **mesmo repositório GitHub** e o mesmo `requirements.txt`, com `Root Directory` em branco (raiz do repositório). Build Command: `pip install -r requirements.txt`.
 
-| Web Service | Start command |
-|---|---|
-| Filmes | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_filmes.app:app` |
-| Salas | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_salas.app:app` |
-| Sessões | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_sessoes.app:app` |
-| Vendas | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_vendas.app:app` |
+| Web Service | URL pública | Start Command |
+|---|---|---|
+| Filmes | https://cinema-filmes.onrender.com | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_filmes.app:app` |
+| Salas | https://cinema-salas.onrender.com | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_salas.app:app` |
+| Sessões | https://cinema-sessoes.onrender.com | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_sessoes.app:app` |
+| Vendas | https://cinema-vendas.onrender.com | `gunicorn -w 1 -b 0.0.0.0:$PORT servico_vendas.app:app` |
 
-Nas variáveis de ambiente do **serviço Sessões** defina `FILMES_URL=https://<sua-url-filmes>` e `SALAS_URL=https://<sua-url-salas>`. No serviço **Vendas** defina `SESSOES_URL=https://<sua-url-sessoes>`. Pode aumentar `HTTP_TIMEOUT_SECONDS` (por exemplo para `90`) por causa da hibernação inicial de serviços gratuitos; na demonstração é melhor acessar as quatro rotas `/health` antes dos POST.
+### Variáveis de ambiente necessárias
 
-**Atenção ao SQLite no Render gratuito:** o disco pode ser efêmero e os dados podem desaparecer quando o serviço reiniciar. Para avaliação, rode `scripts/popular_demo.py` após subir os serviços e mantenha um roteiro de cadastro demonstrativo. O projeto **não é adequado a produção com dados persistentes no plano gratuito**.
+**No serviço Sessões:**
+
+```dotenv
+FILMES_URL=https://cinema-filmes.onrender.com
+SALAS_URL=https://cinema-salas.onrender.com
+HTTP_TIMEOUT_SECONDS=90
+CINEMA_TIMEZONE=America/Sao_Paulo
+```
+
+**No serviço Vendas:**
+
+```dotenv
+SESSOES_URL=https://cinema-sessoes.onrender.com
+HTTP_TIMEOUT_SECONDS=90
+CINEMA_TIMEZONE=America/Sao_Paulo
+```
+
+Nos serviços Filmes e Salas, a variável `CINEMA_TIMEZONE=America/Sao_Paulo` pode ser mantida para padronização. `HTTP_TIMEOUT_SECONDS=90` é uma escolha para tolerar a ativação inicial dos serviços gratuitos que estiverem hibernando; em produção deve-se adotar prazos e mecanismos de retry adequados. **Não use `localhost` nas variáveis de integração do Render.**
+
+### Testar as APIs públicas pelo REST Client
+
+Nos arquivos `.http` de `rest-client/`, substitua os valores das variáveis do começo pelo bloco abaixo (sem adicionar `/health` ao final):
+
+```http
+@filmesUrl = https://cinema-filmes.onrender.com
+@salasUrl = https://cinema-salas.onrender.com
+@sessoesUrl = https://cinema-sessoes.onrender.com
+@vendasUrl = https://cinema-vendas.onrender.com
+```
+
+**Roteiro de demonstração online:**
+
+1. Acessar os quatro endpoints `/health` para ativar/verificar as aplicações hospedadas.
+2. Enviar `POST {{filmesUrl}}/filmes` em `filmes.http` e anotar o `id` retornado.
+3. Enviar `POST {{salasUrl}}/salas` em `salas.http` e anotar o `id` retornado.
+4. Enviar `POST {{sessoesUrl}}/sessoes` em `sessoes.http`, utilizando os IDs corretos. Essa operação dispara **dois GET de Sessões para Filmes e Salas**.
+5. Enviar `GET {{sessoesUrl}}/sessoes/{id}` para verificar a disponibilidade antes da compra.
+6. Enviar `POST {{vendasUrl}}/pedidos` em `vendas.http`, utilizando o ID da sessão criada. Vendas chama Sessões por **POST para reservar vagas**.
+7. Repetir `GET {{sessoesUrl}}/sessoes/{id}` e demonstrar a diminuição de `vagasDisponiveis` (exemplo: de **20 para 18** após compra de dois ingressos).
+8. Exibir, se possível, os **logs de Sessões** e **Vendas** no Render para evidenciar as chamadas entre APIs.
+
+**Importante:** consultar `/filmes/1` ou `/salas/1` diretamente pelo REST Client é útil para inspeção, mas **não substitui a demonstração da integração**. As duas chamadas GET exigidas são feitas **pelo microsserviço Sessões ao criar uma sessão**.
+
+### Limitação do plano gratuito
+
+Em instâncias gratuitas do Render, as aplicações podem hibernar depois de ficarem sem tráfego. O armazenamento local pode ser **efêmero**: os bancos SQLite criados no contêiner podem ser perdidos após hibernação, reinicialização ou novo deploy. Portanto, antes de uma demonstração, prepare novamente os cadastros na ordem indicada. A solução atende ao **escopo acadêmico** solicitado, mas não é indicada para produção com dados persistentes nessa modalidade de hospedagem.
+
+**Popular dados automaticamente:** o script `scripts/popular_demo.py` usa as variáveis `FILMES_URL`, `SALAS_URL`, `SESSOES_URL` e `VENDAS_URL`; por padrão, aponta para `127.0.0.1`. Para popular o Render, configure todas essas variáveis no terminal local antes de executá-lo. Em caso de dúvida, prefira a sequência manual pelos arquivos `.http`, pois ela também serve como evidência de avaliação.
 
 ## 8. Entrega solicitada
 
@@ -224,7 +299,9 @@ Nas variáveis de ambiente do **serviço Sessões** defina `FILMES_URL=https://<
 - [ ] Informar os quatro integrantes e suas contribuições.
 - [ ] Garantir que as três integrações HTTP sejam demonstradas pelo REST Client e logs dos serviços.
 - [ ] Manter no GitHub os arquivos `.http` de `rest-client/` com as requisições da demonstração.
-- [ ] Publicar os quatro serviços e testar as URLs públicas.
+- [x] Publicar os quatro serviços no Render (deploys informados como concluídos).
+- [ ] Testar as integrações ponta a ponta nas URLs públicas.
+- [ ] Confirmar com a professora a aceitação dos arquivos `.http` como evidência em vez da coleção exportada do Thunder Client (recomendada no roteiro).
 - [ ] Entregar link do GitHub e ZIP dos fontes no portal até **27/11/2026 às 23:59**.
 
 ## 9. Arquivos principais
